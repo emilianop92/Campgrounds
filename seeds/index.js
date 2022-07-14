@@ -21,13 +21,12 @@ const randArrayVal = array => array[Math.floor(Math.random()*array.length)]
 const seedDB = async () => {
     await Campground.deleteMany({})
     for(let i =0; i<50; i++) {
-        const rand1000 = Math.floor(Math.random*1000)
-        
+        const rand1000 = Math.floor(Math.random()*1000)
         const c = new Campground({
             title: `${randArrayVal(descriptors)} ${randArrayVal(places)}`,
-            price: ,
+
             location: `${cities[rand1000].city}, ${cities[rand1000].state}`,
-            description: 
+
         })
         await c.save()
     }
