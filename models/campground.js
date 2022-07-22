@@ -2,9 +2,10 @@ const mongoose = require('mongoose')
 
 const campgroundSchema = new mongoose.Schema({
     title: String,
-    price: String,
+    location: String,
+    image: String,
     description: String,
-    location: String
+    price: Number
 })
 
 // Allows the use of the schema when called by another file
