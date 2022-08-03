@@ -4,6 +4,7 @@ const app = express()
 const ejsMate = require('ejs-mate')
 const methodOverride = require('method-override')
 const mongoose = require('mongoose')
+const Joi = require('joi')
 
 const AsyncWrapper = require('./utils/AsyncWrapper')
 const ExpressError = require('./utils/ExpressError')
@@ -12,10 +13,10 @@ const Campground = require('./models/campground')
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/campgrounds')
-    .then(()=>{
+    .then(() => {
         console.log("Connection Open")
     })
-    .catch(()=>{
+    .catch(() => {
         console.log("ERROR")
         console.log(err)
     })
@@ -25,9 +26,24 @@ app.engine('ejs', ejsMate)  // For EJS files, use the ejsMate engine
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
 
-// Express Middleware
-app.use(express.urlencoded({extended: true}))
+// Middleware
+app.use(express.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
+const validateCampground = (req, res, next) => {
+    const campgroundSchema = Joi.object({
+        campground: Joi.object({
+            title: Joi.string().required(),
+            price: Joi.number().required().min(0)
+        }).required()
+    })
+    const { error } = campgroundSchema.validate(req.body)
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    } else {
+        next()
+    }
+}
 
 // Home Page
 app.get('/', (req, res) => {
@@ -37,15 +53,15 @@ app.get('/', (req, res) => {
 // Show all Campgrounds
 app.get('/campgrounds', AsyncWrapper(async (req, res) => {
     const campgrounds = await Campground.find({})
-    res.render('campgrounds/index', {campgrounds})
+    res.render('campgrounds/index', { campgrounds })
 }))
 
 // Make a Campground
-app.get('/campgrounds/new', (req, res) =>{
+app.get('/campgrounds/new', (req, res) => {
     res.render('campgrounds/new')
 })
 
-app.post('/campgrounds', AsyncWrapper(async (req, res) => {
+app.post('/campgrounds', validateCampground, AsyncWrapper(async (req, res) => {
     const campground = new Campground(req.body.campground)
     await campground.save()
     res.redirect(`campgrounds/${campground._id}`)
@@ -53,39 +69,42 @@ app.post('/campgrounds', AsyncWrapper(async (req, res) => {
 
 // Show single Campground
 app.get('/campgrounds/:id', AsyncWrapper(async (req, res) => {
-    const {id} = req.params
+    const { id } = req.params
     const campground = await Campground.findById(id)
-    res.render('campgrounds/showSingle', {campground})
+    res.render('campgrounds/showSingle', { campground })
 }))
 
 // Edit Campground info
 app.get('/campgrounds/:id/edit', AsyncWrapper(async (req, res) => {
-    const {id} = req.params
+    const { id } = req.params
     const campground = await Campground.findById(id)
-    res.render('campgrounds/edit', {campground})
+    res.render('campgrounds/edit', { campground })
 }))
 
-app.put('/campgrounds/:id', AsyncWrapper(async (req, res) => {
-    const {id} = req.params
-    await Campground.findByIdAndUpdate(id, {...req.body.campground})
+app.put('/campgrounds/:id', validateCampground, AsyncWrapper(async (req, res) => {
+    const { id } = req.params
+    await Campground.findByIdAndUpdate(id, { ...req.body.campground })
     res.redirect(`${id}`)
 }))
 
 // Delete Campgrounds
 app.delete('/campgrounds/:id', AsyncWrapper(async (req, res) => {
-    const {id} = req.params
+    const { id } = req.params
     await Campground.findByIdAndDelete(id)
     res.send(`${id} Deleted`)
 }))
 
-app.all('*', (req, res, next) =>{   // This only runs if all other redirrects are missed
+
+// Error Handling
+app.all('*', (req, res, next) => {   // This only runs if all other redirrects are missed
     next(new ExpressError('Page Not Found', 404))
 })
 
-// Error Handling
-app.use((err, req, res, next) =>{
-    const {statusCode=500, message} = err
-    res.send("Something went wrong!")
+app.use((err, req, res, next) => {
+    const { statusCode = 500 } = err
+    if (!err.message) err.message = 'Something went wrong!'
+    console.log(err.message)
+    res.status(statusCode).render('error', { err })
 })
 
 
