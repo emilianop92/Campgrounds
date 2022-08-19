@@ -5,11 +5,13 @@ const ejsMate = require('ejs-mate')
 const methodOverride = require('method-override')
 const mongoose = require('mongoose')
 const Joi = require('joi')
+const {campgroundSchema, reviewSchema} = require('./joiSchemas')
 
 const AsyncWrapper = require('./utils/AsyncWrapper')
 const ExpressError = require('./utils/ExpressError')
 
 const Campground = require('./models/campground')
+const Review = require('./models/review')
 
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/campgrounds')
@@ -25,17 +27,11 @@ mongoose.connect('mongodb://localhost:27017/campgrounds')
 app.engine('ejs', ejsMate)  // For EJS files, use the ejsMate engine
 app.set('view engine', 'ejs')
 app.set('views', path.join(__dirname, 'views'))
-
-// Middleware
 app.use(express.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
+
+// Validation Functions
 const validateCampground = (req, res, next) => {
-    const campgroundSchema = Joi.object({
-        campground: Joi.object({
-            title: Joi.string().required(),
-            price: Joi.number().required().min(0)
-        }).required()
-    })
     const { error } = campgroundSchema.validate(req.body)
     if (error) {
         const msg = error.details.map(el => el.message).join(',')
@@ -44,12 +40,24 @@ const validateCampground = (req, res, next) => {
         next()
     }
 }
+const validateReview = (req, res, next) => {
+    const { error } = reviewSchema.validate(req.body)
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    } else {
+        next()
+    }
+}
+
+
 
 // Home Page
 app.get('/', (req, res) => {
     res.render('homepage')
 })
 
+//#region CAMPGROUND ROUTES
 // Show all Campgrounds
 app.get('/campgrounds', AsyncWrapper(async (req, res) => {
     const campgrounds = await Campground.find({})
@@ -93,7 +101,19 @@ app.delete('/campgrounds/:id', AsyncWrapper(async (req, res) => {
     await Campground.findByIdAndDelete(id)
     res.send(`${id} Deleted`)
 }))
+//#endregion
 
+// Reviews
+app.post('/campgrounds/:id/reviews', validateReview, AsyncWrapper(async (req, res) => {
+    console.log('POST worked')
+    const {id} = req.params
+    const campground = await Campground.findById(id)
+    const review = new Review(req.body.review)
+    campground.reviews.push(review)
+    await review.save()
+    await campground.save()
+    res.redirect(`/campgrounds/${id}`)
+}))
 
 // Error Handling
 app.all('*', (req, res, next) => {   // This only runs if all other redirrects are missed
