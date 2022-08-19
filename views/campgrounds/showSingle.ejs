@@ -2,6 +2,8 @@
 
 <div class="row">
     <div class="col-6 offset-3 mb-4">
+
+        <!-- Campground body (image, description, price) -->
         <div class="card">
             <div class="card-body">
 
@@ -16,16 +18,33 @@
                     <%= campground.description %>
                 </p>
                 <p class="card-text">Price: $<%= campground.price %>/night</p>
-
-            </div>
-            <div class="card-body">
-
-                <a href="<%= campground._id %>/edit" class="card-link btn btn-warning">Edit</a>
-                <form class="d-inline" action="<%= campground._id %>?_method=DELETE" method="post">
-                    <button class="btn btn-danger">Delete</button>
-                </form>
-
             </div>
         </div>
+
+        <!-- Edit and Delete buttons -->
+        <div class="card-body mt-2 mb-2">
+            <a href="<%= campground._id %>/edit" class="card-link btn btn-warning">Edit</a>
+            <form class="d-inline" action="<%= campground._id %>?_method=DELETE" method="post">
+                <button class="btn btn-danger">Delete</button>
+            </form>
+        </div>
+        
+        <!-- Review box -->
+        <h2>Leave a Review</h2>
+        <form action="/campgrounds/<%= campground._id %>/reviews" method="post" class="needs-validation" novalidate>
+            <div class="mb-3">
+                <label class="form-range" for="rating">Rating</label>
+                <input class="form-range" type="range" name="review[rating]" id="rating" min="1" max="5">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="body">Review</label>
+                <textarea class="form-control" name="review[body]" id="body" cols="30" rows="10" required></textarea>
+                <div class="valid-feedback">
+                    Looks good!
+                </div>
+            </div>
+            <button>Submit</button>
+        </form>
+
     </div>
 </div>
