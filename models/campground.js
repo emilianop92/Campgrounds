@@ -15,7 +15,12 @@ const campgroundSchema = new mongoose.Schema({
         required: true},
     price: {
         type: Number,
-        required: true}
+        required: true},
+    reviews: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Review'
+    }]
+
 })
 
 // Allows the use of the schema when called by another file
