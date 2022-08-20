@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Review = require('./review')
 
 const campgroundSchema = new mongoose.Schema({
     title: {
@@ -20,7 +21,17 @@ const campgroundSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Review'
     }]
+})
 
+// after findOneAndDelete > perform the async function here
+campgroundSchema.post('findOneAndDelete', async function(doc) {
+    if(doc) {
+        await Review.remove({
+            _id: {
+                $in: doc.reviews
+            }
+        })
+    }
 })
 
 // Allows the use of the schema when called by another file

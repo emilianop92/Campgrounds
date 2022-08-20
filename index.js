@@ -72,13 +72,14 @@ app.get('/campgrounds/new', (req, res) => {
 app.post('/campgrounds', validateCampground, AsyncWrapper(async (req, res) => {
     const campground = new Campground(req.body.campground)
     await campground.save()
-    res.redirect(`campgrounds/${campground._id}`)
+    res.redirect(`/campgrounds/${campground._id}`)
 }))
 
 // Show single Campground
 app.get('/campgrounds/:id', AsyncWrapper(async (req, res) => {
     const { id } = req.params
     const campground = await Campground.findById(id)
+    await campground.populate('reviews')
     res.render('campgrounds/showSingle', { campground })
 }))
 
@@ -92,20 +93,22 @@ app.get('/campgrounds/:id/edit', AsyncWrapper(async (req, res) => {
 app.put('/campgrounds/:id', validateCampground, AsyncWrapper(async (req, res) => {
     const { id } = req.params
     await Campground.findByIdAndUpdate(id, { ...req.body.campground })
-    res.redirect(`${id}`)
+    res.redirect(`/campgrounds/${id}`)
 }))
 
 // Delete Campgrounds
 app.delete('/campgrounds/:id', AsyncWrapper(async (req, res) => {
     const { id } = req.params
     await Campground.findByIdAndDelete(id)
-    res.send(`${id} Deleted`)
+    res.redirect('/campgrounds')
 }))
 //#endregion
 
-// Reviews
+
+
+//#region REVIEW ROUTES
+// Create a review
 app.post('/campgrounds/:id/reviews', validateReview, AsyncWrapper(async (req, res) => {
-    console.log('POST worked')
     const {id} = req.params
     const campground = await Campground.findById(id)
     const review = new Review(req.body.review)
@@ -114,6 +117,18 @@ app.post('/campgrounds/:id/reviews', validateReview, AsyncWrapper(async (req, re
     await campground.save()
     res.redirect(`/campgrounds/${id}`)
 }))
+
+// Delete a review
+app.delete('/campgrounds/:id/reviews/:reviewID', AsyncWrapper(async (req, res) => {
+    const {id, reviewID} = req.params
+    // find the campground > pull from campground > pull the review from the reviewID
+    await Campground.findByIdAndUpdate(id, {$pull: {reviews: reviewID}})
+    await Review.findByIdAndDelete(req.params.reviewID)
+    res.redirect(`/campgrounds/${id}`)
+}))
+//#endregion
+
+
 
 // Error Handling
 app.all('*', (req, res, next) => {   // This only runs if all other redirrects are missed
