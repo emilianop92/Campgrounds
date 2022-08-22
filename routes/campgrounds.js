@@ -6,7 +6,6 @@ const Campground = require('../models/campground')
 
 
 // Joi validation
-const Joi = require('joi')
 const {campgroundSchema} = require('../joiSchemas')
 const validateCampground = (req, res, next) => {
     const { error } = campgroundSchema.validate(req.body)

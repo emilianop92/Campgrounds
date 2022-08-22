@@ -4,14 +4,9 @@ const app = express()
 const ejsMate = require('ejs-mate')
 const methodOverride = require('method-override')
 const mongoose = require('mongoose')
-const Joi = require('joi')
-const {campgroundSchema, reviewSchema} = require('./joiSchemas')
 
 const AsyncWrapper = require('./utils/AsyncWrapper')
 const ExpressError = require('./utils/ExpressError')
-
-const Campground = require('./models/campground')
-const Review = require('./models/review')
 
 const campgrounds = require('./routes/campgrounds')
 const reviews = require('./routes/reviews')
@@ -33,7 +28,7 @@ app.set('views', path.join(__dirname, 'views'))
 app.use(express.urlencoded({ extended: true }))
 app.use(methodOverride('_method'))
 
-// ROUTES
+// ROUTER
 app.use('/campgrounds', campgrounds)
 app.use('/campgrounds/:id/reviews', reviews)
 

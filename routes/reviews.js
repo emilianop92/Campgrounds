@@ -7,7 +7,6 @@ const Review = require('../models/review')
 
 
 // Joi validation
-const Joi = require('joi')
 const {reviewSchema} = require('../joiSchemas')
 const validateReview = (req, res, next) => {
     const { error } = reviewSchema.validate(req.body)
