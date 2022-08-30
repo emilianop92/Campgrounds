@@ -2,8 +2,9 @@ const express = require('express')
 const path = require('path')
 const app = express()
 const ejsMate = require('ejs-mate')
+const session = require('express-session')
 const methodOverride = require('method-override')
-const mongoose = require('mongoose')
+const flash = require('connect-flash')
 
 const AsyncWrapper = require('./utils/AsyncWrapper')
 const ExpressError = require('./utils/ExpressError')
@@ -12,21 +13,44 @@ const campgrounds = require('./routes/campgrounds')
 const reviews = require('./routes/reviews')
 
 // Connect to MongoDB
+const mongoose = require('mongoose')
+const { request } = require('http')
 mongoose.connect('mongodb://localhost:27017/campgrounds')
     .then(() => {
         console.log("Connection Open")
     })
     .catch(() => {
-        console.log("ERROR")
+        console.log("ERROR CONNECTING MONGOOSE")
         console.log(err)
     })
 
 // Configure Express
-app.engine('ejs', ejsMate)  // For EJS files, use the ejsMate engine
-app.set('view engine', 'ejs')
-app.set('views', path.join(__dirname, 'views'))
-app.use(express.urlencoded({ extended: true }))
-app.use(methodOverride('_method'))
+app.set('view engine', 'ejs')                           // selects ejs as the templating engine
+app.engine('ejs', ejsMate)                              // specifies that ejsMate should For EJS files
+app.set('views', path.join(__dirname, 'views'))         // looks for html/ejs files in the views directory
+app.use(express.urlencoded({ extended: true }))         // allows for rich objects and arrays to be encoded into the URL-encoded format
+app.use(methodOverride('_method'))                      // allows for put/patch/delete requests
+app.use(express.static(path.join(__dirname, 'public'))) // serves static files
+
+// Creating sessions and cookies
+const sessionConfig = {
+    secret: 'password',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        HttpOnly: true
+    }
+}
+app.use(session(sessionConfig))
+app.use(flash())
+app.use( (req, res, next) => {
+    res.locals.success = req.flash('success')   // if a request has a flash "success" label, it will be passed to the response
+    res.locals.error = req.flash('error')       // if a request has a flash "error" label, it will be passed to the response
+    next()
+})
+
 
 // ROUTER
 app.use('/campgrounds', campgrounds)

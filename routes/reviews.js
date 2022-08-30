@@ -18,7 +18,7 @@ const validateReview = (req, res, next) => {
     }
 }
 
-// ROUTES
+// Create a revew
 router.post('/', validateReview, AsyncWrapper(async (req, res) => {
     const {id} = req.params
     const campground = await Campground.findById(id)
@@ -26,6 +26,7 @@ router.post('/', validateReview, AsyncWrapper(async (req, res) => {
     campground.reviews.push(review)
     await review.save()
     await campground.save()
+    req.flash('success', 'Successfully added a new review!')
     res.redirect(`/campgrounds/${id}`)
 }))
 
@@ -35,6 +36,7 @@ router.delete('/:reviewID', AsyncWrapper(async (req, res) => {
     // find the campground > pull from campground > pull the review from the reviewID
     await Campground.findByIdAndUpdate(id, {$pull: {reviews: reviewID}})
     await Review.findByIdAndDelete(req.params.reviewID)
+    req.flash('success', 'Successfully deleted the review!')
     res.redirect(`/campgrounds/${id}`)
 }))
 
